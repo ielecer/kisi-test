@@ -244,7 +244,7 @@ class BGM113 {
 			// If the events and command match, we cancel
 			// the timeout, and call the eent callback.
 			if(cb.cid == event.cid && cb.cmd == event.cmd) {
-				imp.imp.cancelwakeup(cb.timer); 
+				imp.cancelwakeup(cb.timer); 
 				cb.timer = null;
 				_response_callbacks.remove(i);
 
@@ -277,6 +277,26 @@ class BGM113 {
 		} else {
 			log("LOG", "event " + event.name + " (unhandled)");
 		}
+	}
+
+
+	function send_command (name, cid, cmd, payload, callback = null) {
+		log("LOG", format("call %s", name));
+
+		// Queue the callback, build the packet and send it off
+        local command = {name=name, cid=cid, cmd=cmd, callback=callback};
+        local timer = imp.wakeup(BLE_TIMEOUT, function() {
+            // The timeout has expired. Send an event.
+            command.result <- "timeout";
+            fire_response(command);
+		}.bindenv(this));
+
+		command.timer <- timer;
+		response_callbacks.push(command);
+
+	    local len = payload == null ? 0 : payload.len();
+        local header = format("%c%c%c%c", BLE_MESSAGE_TYPE.COMMAND, len, cid, cmd);
+		uart_write(header, payload);
 	}
 }
 
