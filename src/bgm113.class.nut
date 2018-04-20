@@ -219,6 +219,65 @@ class BGM113 {
         }
 	}
 
+	function fire_response (event) {
+		local result = "unknown";
+		if ("result" in event) {
+			switch(event.result) {
+				case 0x00: 
+					result = "OK";
+					break;
+				case "timeout":
+					result = "timeout";
+					break;
+				default:
+					if (typeof event.result == "integer") {
+						result = format("Error 0x%04x", event.result);
+					}
+					break;
+			}
+		}
+
+		// Find the original callback in the queue and fire it
+		for (local i = 0; i < _response_callbacks.len(); i++) {
+			local cb = _response_callbacks[i];
+
+			// If the events and command match, we cancel
+			// the timeout, and call the eent callback.
+			if(cb.cid == event.cid && cb.cmd == event.cmd) {
+				imp.imp.cancelwakeup(cb.timer); 
+				cb.timer = null;
+				_response_callbacks.remove(i);
+
+				if (cb.callback != null) {
+                    log("LOG", format("resp %s: %s", event.name, result)); 
+                    result = null;
+					cb.callback(event);
+				}
+				break;
+			}
+		}
+
+        if (result != null) {
+            log("LOG", format("resp %s: %s (unhandled)", event.name, result))
+		}
+	}
+
+	function fire_event(event) {
+		if (event.cid == BLE_CLASS_ID.SYSTEM && event.cmd == 0) {
+			// After the device is booted, we have no use for previous callbacks
+			// so we clear them. 
+
+			_response_callbacks.clear();
+		}
+
+		// Find the event handler registered and fire it
+		if (event.name in _event_callbacks) {
+			log ("LOG", "event" + event.name);
+			_event_callbacks[event.name](event);
+		} else {
+			log("LOG", "event " + event.name + " (unhandled)");
+		}
+	}
 }
 
 
