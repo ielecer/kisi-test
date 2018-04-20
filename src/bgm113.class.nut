@@ -168,6 +168,57 @@ class BGM113 {
 			PHY_CODED 	= 4,
 		}
 	}
+
+	function log (type, message) {
+		if ("log" in _event_callbacks) {
+			_event_callbacks.log(type, message);
+		} else if (type == "ERR") {
+			server.error(format("%s: %s", type, message));
+		} else if (type == "SEND" || type == "RECV") {
+			server.log(format("%s: %s", type, hexdump(message)));
+		} else {
+			server.log(format("%s: %s", type, message));
+		}
+	}
+
+	function addr_to_string(payload) {
+		assert(payload.len() == 6);
+        return format("%02x:%02x:%02x:%02x:%02x:%02x", 
+                    payload[5],
+                    payload[4], 
+                    payload[3], 
+                    payload[2], 
+                    payload[1], 
+					payload[0]);
+	}
+
+    function addr_type_to_string(addr_type) {
+        return (addr_type == 0) ? "public" : "random";
+	}
+
+    function string_to_addr_type(addr_type) {
+        return (addr_type == "public") ? 0 : 1;
+	}
+
+    function halt() {
+        if (_reset_l) {
+            _reset_l.configure(DIGITAL_OUT);
+            _reset_l.write(0);
+        }
+	}
+
+    function reboot() {
+        if (_reset_l) {
+            _reset_l.configure(DIGITAL_OUT);
+            _reset_l.write(0); 
+            imp.wakeup(0.1, function() {
+                _reset_l.write(1);
+                _reset_l.configure(DIGITAL_IN);
+                _uart_buffer = "";
+            }.bindenv(this))
+        }
+	}
+
 }
 
 
