@@ -309,6 +309,66 @@ class BGM113 {
 		}
 	}
 
+	function uart_write(header, payload) {
+		log("SEND", payload == null ? header : header + payload);
+
+		// Send header 
+		_uart.write(header);
+		// Send payload if available. 
+		if (payload != null) _uart.write(payload);
+	}
+
+	function read_uart() {
+
+		local ch = null;
+
+		// Fetch all the bytes, char by char and store them in
+		// our internal buffer
+		while ((ch = _uart.read()) != -1) {
+			_uart_buffer += format("%c", ch);
+
+			// We should only process one response / event at the time
+			// so we check for the maximum size. If there are more 
+			// bytes incoming, they'll be buffered by HW flow control.
+			if (_uart_buffer.len() >= BLE_HEADER_SIZE + BLE_MAX_PAYLOAD) {
+				break;
+			}
+		}
+
+		if (_uart_buffer.len() == 0) {
+			return;
+		}
+
+		// If there's enough characters to form a header, we start parsing
+		while (_uart_buffer.len() >= BLE_HEADER_SIZE) {
+
+			local event = null;
+
+			try {
+				event = parse_packet(_uart_buffer);
+
+			} catch {
+				log ("ERR", "Exception parsing the UART buffer: " + e);
+				throw "Exception parsing the UART buffer: " + e;
+			}
+
+			if (event != null) {
+				log("RECV", _uart_buffer.slice(0, event.length + 4));
+				_uart_buffer = _uart_buffer.slice(event.length + 4);
+
+				if (event.msg_type == BLE_MESSAGE_TYPE.COMMAND) {
+					fire_response(event);
+				} else {
+					fire_event(event);
+				}
+			} else {
+				// If the packet is incomplete, we skip the parsing and wait for it
+				// to be complete.
+				break;
+			}
+		}
+	}
+
 }
 
 
