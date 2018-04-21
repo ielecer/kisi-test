@@ -1,9 +1,53 @@
+@include "bgm113.class.nut"
 
-@include "testclass.class.nut"
+server.log("Device booted.");
+m_bgm113 <- BGM113(hardware.uart0, hardware.pinN);
 
-server.log("Hello World from Device");
-server.log("Hello again");
+m_bgm113.log("APP", "Booted ...");
 
-local test = TestClass();
+m_bgm113.on("dfu_boot", function (event) {
 
-test.print_message();
+	server.log("Booted in DFU mode");
+	local bootloader = format("%u", event.payload.bootloader);
+	server.log("Bootloader version: " + bootloader);
+})
+
+m_bgm113.on("system_boot", function(event) {
+
+	local major = format("%u", event.payload.major);
+	server.log("Major release version: " + major);
+	local minor = format("%u", event.payload.minor);
+	server.log("Minor release version: " + minor);
+	local patch = format("%u", event.payload.patch);
+	server.log("Patch release number: " + patch);
+	local build = format("%u", event.payload.build);
+	server.log("Build number: " + build);
+	local bootloader = format("%u", event.payload.bootloader);
+	server.log("Bootloader version: " + bootloader);
+	local hw = format("%u", event.payload.hw);
+	server.log("Hardware type: " + hw);
+
+	m_bgm113.system_get_bt_address(function (response) {
+		if (response.result == 0 || response.result == "timeout") { 
+			address = format("%s", response.payload.address);
+			server.log("Address: " + address);
+		} else {
+	    	m_bgm113.log("ERR", "Error detecting the BMG113");
+		}
+	})
+});
+
+function say_hello() {
+
+	m_bgm113.system_hello(function(response) {
+		if (response.result == 0 || response.result == "timeout") {
+			server.log("Hello back from BMG113");
+		} else {
+			m_bgm113.log("ERR", "Error communicating with BMG113");
+		}
+	});
+
+	imp.wakeup(30, say_hello);
+}
+
+say_hello();

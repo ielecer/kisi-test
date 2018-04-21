@@ -7,7 +7,7 @@ class BGM113 {
     _event_callbacks = null; // Event callback queue
 	_uart_buffer = null; // RX char buffer
 
-	constructor(uart, reset_l, baud = 115432) {
+	constructor(uart, reset_l, baud = 115200) {
 		init();
 
 		_uart = uart;
@@ -18,6 +18,8 @@ class BGM113 {
 		_event_callbacks = {};
 		_uart_buffer = "";
 
+		// There's no way i was going to forget this ;)
+		_uart.setrxfifosize(10000)
 		_uart.configure(_baud, 8, PARITY_NONE, 1, 0, read_uart.bindenv(this));
 
 		if(_reset_l) {
@@ -188,6 +190,19 @@ class BGM113 {
 		}
 	}
 
+    function hexdump(dump, ascii = true) {
+    	local dbg = "";
+    	foreach (ch in dump) {
+        	dbg += format("%02x ", ch)
+        	if (ch >= 32 && ch <= 126 && ascii) dbg += format("[%c] ", ch);
+        	if (dbg.len() > BLE_DUMP_MAX) {
+            	dbg += "... ";
+            	break;
+        	}
+    	}
+    	return (dbg.len() > 0) ? dbg.slice(0, -1) : "";
+	}
+
 	function addr_to_string(payload) {
 		assert(payload.len() == 6);
         return format("%02x:%02x:%02x:%02x:%02x:%02x", 
@@ -222,6 +237,7 @@ class BGM113 {
                 _reset_l.write(1);
                 _reset_l.configure(DIGITAL_IN);
                 _uart_buffer = "";
+                dfu_reset();
             }.bindenv(this))
         }
 	}
@@ -279,7 +295,7 @@ class BGM113 {
 
 		// Find the event handler registered and fire it
 		if (event.name in _event_callbacks) {
-			log ("LOG", "event" + event.name);
+			log ("LOG", "event " + event.name);
 			_event_callbacks[event.name](event);
 		} else {
 			log("LOG", "event " + event.name + " (unhandled)");
@@ -299,7 +315,7 @@ class BGM113 {
 		}.bindenv(this));
 
 		command.timer <- timer;
-		response_callbacks.push(command);
+		_response_callbacks.push(command);
 
 	    local len = payload == null ? 0 : payload.len();
         local header = format("%c%c%c%c", BLE_MESSAGE_TYPE.COMMAND, len, cid, cmd);
@@ -353,8 +369,7 @@ class BGM113 {
 
 			try {
 				event = parse_packet(_uart_buffer);
-
-			} catch {
+			} catch (e) {
 				log ("ERR", "Exception parsing the UART buffer: " + e);
 				throw "Exception parsing the UART buffer: " + e;
 			}
@@ -363,7 +378,7 @@ class BGM113 {
 				log("RECV", _uart_buffer.slice(0, event.length + 4));
 				_uart_buffer = _uart_buffer.slice(event.length + 4);
 
-				if (event.msg_type == BLE_MESSAGE_TYPE.COMMAND) {
+				if (event.message_type == BLE_MESSAGE_TYPE.COMMAND) {
 					fire_response(event);
 				} else {
 					fire_event(event);
@@ -393,7 +408,7 @@ class BGM113 {
 		if (event.length > 0) {
 			// Check if the ammount of data in buffer is at least as big as 
 			// header + payload indicate in header.
-			if (buffer.length() >= BLE_HEADER_SIZE + event.length) {
+			if (buffer.len() >= BLE_HEADER_SIZE + event.length) {
 				// Create the proper payload to be processed; 
 				payload = buffer.slice(BLE_HEADER_SIZE, BLE_HEADER_SIZE + event.length);
 			} else  {
@@ -413,6 +428,7 @@ class BGM113 {
 							// system_hello response
 							case 0:
 								event.name <- "system_hello";
+								event.result <- payload[0] + (payload[1] << 8);
 								break;
 							
 							//  system_get_bt_address response
@@ -462,13 +478,28 @@ class BGM113 {
 			// Events
 			case BLE_MESSAGE_TYPE.EVENT:
 				switch(event.cid) {
+					case BLE_CLASS_ID.DFU:
+						switch(event.cmd) {
+							case 0:
+								event.payload.bootloader <- payload[0] + (payload[1] << 8) + (payload[2] << 16) + (payload[3] << 24);
+								event.name <- "dfu_boot";
+								break;
+
+							case 1:
+								event.reason <- payload[0] + (payload[1] << 8);
+								event.name <-"dfu_boot_failure";
+								break;
+						}
+						break;
+
+
 					case BLE_CLASS_ID.SYSTEM: 
 						switch (event.cmd) {
 							// system_boot event
 							case 0:
 								event.payload.major <- payload[0] + (payload[1] << 8);
 								event.payload.minor <- payload[2] + (payload[3] << 8);
-								event.payload.patch <- payload[4] + (payload[5] << 8)
+								event.payload.patch <- payload[4] + (payload[5] << 8);
 								event.payload.build <- payload[6] + (payload[7] << 8);
 								event.payload.bootloader <- payload[8] + (payload[9] << 8) + (payload[10] << 16) + (payload[11] << 24);
 								event.payload.hw <- payload[12] + (payload[13] << 8);
@@ -526,6 +557,19 @@ class BGM113 {
         return send_command("system_hello", BLE_CLASS_ID.SYSTEM, 0, null, callback);
 	}
 
+    function system_get_bt_address(callback = null) {
+        return send_command("system_get_bt_address", BLE_CLASS_ID.SYSTEM, 3, null, callback);
+	}
+
+	function system_reset(boot_in_dfu = 0) {
+        local payload = format("%c", boot_in_dfu);
+        return send_command("system_reset", BLE_CLASS_ID.SYSTEM, 0, payload);
+	}
+
+	function dfu_reset(boot_type = 0) {
+		local payload = format("%c", boot_type);
+		return send_command("system_reset", BLE_CLASS_ID.DFU, 0, payload);
+	}
 }
 
 
