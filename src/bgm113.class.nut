@@ -53,6 +53,13 @@ class BGM113 {
 			EVENT	= 0xA0  // Event notifications
 		}
 
+		enum BLE_HEADER_OFFSET {
+			MESSAGE_TYPE = 0,
+			LENGTH 		 = 1,
+			CLASS_ID 	 = 2,
+			COMMAND 	 = 3
+		}
+
 		enum BLE_ERRORS {
 			INVALID_CONNECTION_HANDLE 						= 0x0101,
 			WATING_RESPONSE									= 0x0102,
@@ -369,16 +376,151 @@ class BGM113 {
 		}
 	}
 
+	function parse_packet(buffer) {
+		
+		// First, we parse the header;
+		local event = {};
+
+		event.message_type <- buffer[BLE_HEADER_OFFSET.MESSAGE_TYPE];
+		event.length <- buffer[BLE_HEADER_OFFSET.LENGTH];
+		event.cid <- buffer[BLE_HEADER_OFFSET.CLASS_ID]
+		event.cmd <- buffer[BLE_HEADER_OFFSET.COMMAND];
+		event.name <- "unknown";
+		event.result <- 0;
+		event.payload <- {};
+
+		local payload = null;
+		if (event.length > 0) {
+			// Check if the ammount of data in buffer is at least as big as 
+			// header + payload indicate in header.
+			if (buffer.length() >= BLE_HEADER_SIZE + event.length) {
+				// Create the proper payload to be processed; 
+				payload = buffer.slice(BLE_HEADER_SIZE, BLE_HEADER_SIZE + event.length);
+			} else  {
+				// Incomplete packet
+				return null;
+			}
+		}
+
+		// Now we analyse each individual case.
+		// At the momment, we only parse System and GAP responses and events 
+		switch (event.message_type) {
+			// Command responses
+			case BLE_MESSAGE_TYPE.COMMAND:
+				switch(event.cid) {
+					case BLE_CLASS_ID.SYSTEM:
+						switch (event.cmd) {
+							// system_hello response
+							case 0:
+								event.name <- "system_hello";
+								break;
+							
+							//  system_get_bt_address response
+							case 3:
+								event.payload.address <- addr_to_string(payload.slice(0, 6));
+								event.name <- "system_get_bt_address";
+								break;
+
+							// system_halt response
+							case 12:
+								event.result <- payload[0] + (payload[1] << 8);
+								event.name <- "system_halt";
+								break;
+						}
+						break;
+
+					case BLE_CLASS_ID.GAP:
+						switch(event.cmd) {
+							// gap_end_procedure response
+							case 3:
+								event.result <- payload[0] + (payload[1] << 8);
+								event.name <- "gap_end_procedure";
+								break;
+
+							// gap_set_discovery_timing response
+							case 22: 
+								event.result <- payload[0] + (payload[1] << 8);
+								event.name <- "gap_set_discovery_timing";
+								break;
+
+							// gap_set_discovery_type response
+							case 23:
+								event.result <- payload[0] + (payload[1] << 8);
+								event.name <- "gap_set_discovery_type";
+								break;
+
+							// gap_start_discovery response
+							case 24:
+								event.result <- payload[0] + (payload[1] << 8);
+								event.name <- "gap_start_discovery";
+								break;	
+						}
+						break;	
+				}
+				break;
+
+			// Events
+			case BLE_MESSAGE_TYPE.EVENT:
+				switch(event.cid) {
+					case BLE_CLASS_ID.SYSTEM: 
+						switch (event.cmd) {
+							// system_boot event
+							case 0:
+								event.payload.major <- payload[0] + (payload[1] << 8);
+								event.payload.minor <- payload[2] + (payload[3] << 8);
+								event.payload.patch <- payload[4] + (payload[5] << 8)
+								event.payload.build <- payload[6] + (payload[7] << 8);
+								event.payload.bootloader <- payload[8] + (payload[9] << 8) + (payload[10] << 16) + (payload[11] << 24);
+								event.payload.hw <- payload[12] + (payload[13] << 8);
+								event.payload.hash <- payload[14] + (payload[15] << 8) + (payload[16] << 16) + (payload[17] << 24);
+								event.name <- "system_boot";
+								break;
+						}
+						break;
+
+					case BLE_CLASS_ID.GAP:
+						switch(event.cmd) {
+							// gap_scan_response
+							case 0:
+								event.payload.rssi <- payload[0] //- 256;
+								switch(payload[1] & 0x7) {
+									case 0: event.payload.packet_type <- "connectable_scannable"; break;
+									case 1: event.payload.packet_type <- "connectable"; break;
+									case 2: event.payload.packet_type <- "connectable_scannable"; break;
+									case 3: event.payload.packet_type <- "scannable"; break;
+									case 4: event.payload.packet_type <- "non_connectable_non_scannable"; break;
+									default: event.payload.packet_type <- "unknown"; break;
+								}
+								event.payload.sender <- addr_to_string(payload.slice(2, 8));
+								event.payload.address_type <- addr_type_to_string(payload[8]);
+								event.payload.bond <- payload[9];
+								event.payload.data <- [];
+                                try {
+                                    for (local i = 11; i < payload.len(); i++) {
+                                        local len = payload[i++];
+                                        
+                                        local advpart = {};
+                                        advpart.type <- payload[i++];
+                                        advpart.data <- payload.slice(i, i+len-1);
+                                        
+                                        event.payload.data.push(advpart);
+                                        
+                                        i += len-2;
+                                    }
+                                }  catch (e) {
+                                    log("ERR", "Failed to parse advertising packet: " + e);
+                                }
+                                event.name <- "gap_scan_response";
+								break;
+						}
+						break;
+				}
+				break;
+		}
+
+		return event;
+	}
+
 }
-
-
-
-
-
-
-
-
-
-
 
 
