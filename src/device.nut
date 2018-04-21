@@ -1,5 +1,13 @@
 @include "bgm113.class.nut"
 
+mayor <- null;
+minor <- null;
+patch <- null;
+build <- null;
+bootloader <- null;
+hw <- null;
+address <- null;
+
 server.log("Device booted.");
 m_bgm113 <- BGM113(hardware.uart0, hardware.pinN);
 
@@ -8,23 +16,23 @@ m_bgm113.log("APP", "Booted ...");
 m_bgm113.on("dfu_boot", function (event) {
 
 	server.log("Booted in DFU mode");
-	local bootloader = format("%u", event.payload.bootloader);
+	bootloader = format("%u", event.payload.bootloader);
 	server.log("Bootloader version: " + bootloader);
 })
 
 m_bgm113.on("system_boot", function(event) {
 
-	local major = format("%u", event.payload.major);
+	major = format("%u", event.payload.major);
 	server.log("Major release version: " + major);
-	local minor = format("%u", event.payload.minor);
+	minor = format("%u", event.payload.minor);
 	server.log("Minor release version: " + minor);
-	local patch = format("%u", event.payload.patch);
+	patch = format("%u", event.payload.patch);
 	server.log("Patch release number: " + patch);
-	local build = format("%u", event.payload.build);
+	build = format("%u", event.payload.build);
 	server.log("Build number: " + build);
-	local bootloader = format("%u", event.payload.bootloader);
+	bootloader = format("%u", event.payload.bootloader);
 	server.log("Bootloader version: " + bootloader);
-	local hw = format("%u", event.payload.hw);
+	hw = format("%u", event.payload.hw);
 	server.log("Hardware type: " + hw);
 
 	m_bgm113.system_get_bt_address(function (response) {
@@ -47,7 +55,7 @@ function say_hello() {
 		}
 	});
 
-	imp.wakeup(30, say_hello);
+	imp.wakeup(5, say_hello);
 }
 
 say_hello();

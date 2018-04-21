@@ -237,7 +237,9 @@ class BGM113 {
                 _reset_l.write(1);
                 _reset_l.configure(DIGITAL_IN);
                 _uart_buffer = "";
-                dfu_reset();
+                // Adding this seems to solve the issues
+                // of booting in DFU mode
+                //dfu_reset();
             }.bindenv(this))
         }
 	}
