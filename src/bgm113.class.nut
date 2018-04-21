@@ -521,6 +521,11 @@ class BGM113 {
 		return event;
 	}
 
+
+    function system_hello(callback = null) {
+        return send_command("system_hello", BLE_CLASS_ID.SYSTEM, 0, null, callback);
+	}
+
 }
 
 
