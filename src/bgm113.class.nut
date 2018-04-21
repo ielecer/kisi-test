@@ -298,6 +298,17 @@ class BGM113 {
         local header = format("%c%c%c%c", BLE_MESSAGE_TYPE.COMMAND, len, cid, cmd);
 		uart_write(header, payload);
 	}
+
+	function on(event, callback) {
+		if (callback == null) {
+			if (event in _event_callbacks) {
+				delete _event_callbacks[event];
+			}
+		} else {
+			_event_callbacks[event] <- callback;
+		}
+	}
+
 }
 
 
