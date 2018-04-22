@@ -34,127 +34,88 @@ class BGM113 {
 		const BLE_HEADER_SIZE = 4;
 		const BLE_DUMP_MAX = 200;
 
-		enum BLE_CLASS_ID {
-			DFU 		= 0x00, // Device Firmware updates over UART
-			SYSTEM 		= 0x01, // System functions
-			GAP			= 0x03, // Generic Access Profile
-			CONNECTION 	= 0x08, // Connection management
-			GATT_CLIENT	= 0x09,	// Generic Attribute Profile cilent
-			GATT_SERVER = 0x0A, // Generic Attribute Profile server
-			ENDPOINT 	= 0x0B, // Endpoint (DEPRICATED)
-			HARDWARE    = 0x0C, // Hardware functionalities
-			PERSISTENT 	= 0x0D, // Persistent store
-			TEST		= 0x0E, // Testing Commands
-			SECURITY    = 0x0F, // Security manager
-			COEXISTANCE = 0x20, // Coexistance Interface
-			MESSAGING 	= 0xFF // User messaging
-		}
-
     	enum BLE_MESSAGE_TYPE {
     		COMMAND = 0x20, // Commands and Command Responses
 			EVENT	= 0xA0  // Event notifications
 		}
 
 		enum BLE_HEADER_OFFSET {
-			MESSAGE_TYPE = 0,
-			LENGTH 		 = 1,
-			CLASS_ID 	 = 2,
-			COMMAND 	 = 3
+			MESSAGE_TYPE 	= 0,
+			LENGTH 			= 1,
+			CLASS_ID 		= 2,
+			COMMAND 		= 3
 		}
 
-		enum BLE_ERRORS {
-			INVALID_CONNECTION_HANDLE 						= 0x0101,
-			WATING_RESPONSE									= 0x0102,
-			GATT_CONNECTION_TIMEOUT							= 0x0103,
-			INVALID_PARAM									= 0x0180,
-			WRONG_STATE										= 0x0181,
-			OUT_OF_MEMORY               					= 0x0182,
-			NOT_IMPLEMENTED									= 0x0183,
-			INVALID_COMMAND									= 0x0184,
-			TIMEOUT 										= 0x0185,
-			NOT_CONNECTED									= 0x0186,
-			FLOW											= 0x0187,
-			USER_ATTRIBUTE									= 0x0188,
-			INVALID_LICENCE_KEY         					= 0x0189,
-			COMMAND_TOO_LONG            					= 0x018A,
-			OUT_OF_BONDS									= 0x018B,
-			UNSPECIFIED										= 0x018C,
-			HARDWARE 										= 0x018D,
-			BUFFERS_FULL									= 0x018E,
-			DISCONNECTED 									= 0x018F,
-			TOO_MANY_REQUESTS								= 0x0190,
-			NOT_SUPPORTED									= 0x0191,
-			NO_BONDING 										= 0x0192,
-			CRYPTO											= 0x0193,
-			DATA_CORRUPTED									= 0x0194,
-			COMMAND_INCOMPLETE								= 0x0195,
-			UNKNOWN_CONNECTION_IDENTIFIER					= 0x0202,
-			PAGE_TIMEOUT									= 0x0204,
-			AUTHENTICATION_FAILURE							= 0x0205,
-			PIN_OR_KEY_MISSING								= 0x0206,
-			MEMORY_CAPACITY_EXCEEDED						= 0x0207,
-			CONNECTION_TIMEOUT 								= 0x0208,
-			CONNECTION_LIMIT_EXCEEDED						= 0x0209,
-			SYNCHRONOUS_CONNECTION_LIMIT_EXCEEDED			= 0x020A,
-			ACL_CONNECTION_ALREADY_EXISTS					= 0x020B,
-			COMMAND_DISALLOWED								= 0x020C
+		enum BLE_CLASS_ID {
+			DFU			= 0x00, // Device Firmware updates over UART
+			SYSTEM 		= 0x01, // System functions
+			GAP 		= 0x03, // Generic Access Profile
+			CONNECTION 	= 0x08, // Connection management
+			GATT_CLIENT = 0x09,	// Generic Attribute Profile cilent
+			GATT_SERVER = 0x0A, // Generic Attribute Profile server
+			ENDPOINT 	= 0x0B, // Endpoint (DEPRICATED)
+			HARDWARE 	= 0x0C, // Hardware functionalities
+			PERSISTENT 	= 0x0D, // Persistent store
+			TEST 		= 0x0E, // Testing Commands
+			SECURITY 	= 0x0F, // Security manager
+			COEXISTANCE = 0x20, // Coexistance Interface
+			MESSAGING 	= 0xFF // User messaging
 		}
 
-		enum BLE_GATT_ATT_OPCODE {
-			READ_BY_TYPE_REQUEST 		= 8,
-			READ_BY_TYPE_RESPONSE 		= 9,
-			READ_REQUEST 				= 10,
-			READ_RESPONSE 				= 11,
-			READ_BLOB_REQUEST			= 12, 
-			READ_BLOB_RESPONSE			= 13,
-			READ_MULTIPLE_REQUEST		= 14,
-			READ_MULTIPLE_RESPONSE 		= 15,
-			WRITE_REQUEST				= 18,
-			WRITE_RESPONSE				= 19,
-			WRITE_COMMAND				= 82,
-			PREPARE_WRITE_REQUEST		= 22,
-			PREPARE_WRITE_RESPONSE 		= 23,
-			EXECUTE_WRITE_REQUEST 		= 24,
-			EXECUTE_WRITE_RESPONSE 		= 25,
-			HANDLE_VALUE_NOTIFICATION 	= 27,
-			HANDLE_VALUE_INDICATION 	= 29
+		enum BLE_DFU_CMD {
+			RESET 				= 0x00
+			FLASH_SET_ADDRESS 	= 0x01,
+			FLASH_UPLOAD 		= 0x02,
+			FLASH_UPLOAD_FINISH = 0x03
 		}
 
-		enum BLE_GATT_CLIENT_CONFIG_FLAG {
-			GATT_DISABLE 		= 0,
-			GATT_NOTIFICATION 	= 1,
-			GATT_INDICATION 	= 2
+		enum BLE_DFU_EVT {
+			BOOT 			= 0x00,
+			BOOT_FAILURE 	= 0x01
 		}
 
-
-		enum BLE_GATT_EXECUTE_WRITE_FLAG {
-			GATT_CANCEL	= 0,
-			GATT_COMMIT	= 1
+		enum BLE_SYSTEM_CMD {
+			HELLO 			= 0x00,
+			RESET 			= 0x01,
+			GET_BT_ADDRESS 	= 0x03,
+			SET_BT_ADDRESS 	= 0x04,
+			SET_TX_POWER 	= 0x0A,
+			GET_RANDOM_DATA = 0x0B,
+			HALT 			= 0x0C,
+			SET_DEVICE_NAME = 0x0D
 		}
 
-		enum BLE_GATT_SERVER_CHARACTERISTIC_STATUS_FLAG {
-			GATT_SERVER_CLIENT_CONFIG = 1,
-			GATT_SERVER_CONFIRMATION  = 2
+		enum BLE_SYSTEM_EVT {
+			BOOT 			= 0x00,
+			AWAKE 			= 0x01,
+			EXTERNAL_SIGNAL = 0x03,
+			HARDWARE_ERROR 	= 0x05
 		}
 
-		enum BLE_GAP_ADDRESS_TYPE {
-			PUBLIC 			= 0,
-			RANDOM 			= 1,
-			PUBLIC_IDENTITY = 2,
-			RANDOM_IDENTITY = 3
+		enum BLE_GAP_CMD {
+			OPEN 				= 0x00,
+			SET_MODE 			= 0x01,
+			DISCOVER 			= 0x02,
+			END_PROCEDURE 		= 0x03,
+			SET_ADV_PARAMETERS 	= 0x04,
+			SET_CONN_PARAMETERS = 0x05,
+			SET_SCAN_PARAMETERS = 0x06,
+			SET_ADV_DATA 		= 0x07,
+			SET_ADV_TIMEOUT 	= 0x08,
+			SET_PRIVACY_MODE 	= 0x0D
 		}
 
-		enum BLE_GAP_ADVERTISING_ADDRESS_TYPE {
-			IDENTITY_ADDRESS = 0, 
-			NON_RESOLVABLE   = 1,
+		enum BLE_GAP_EVT {
+			SCAN_RESPONSE 	= 0x00,
+			SCAN_REQUEST 	= 0x02,
+			ADV_TIMEOUT 	= 0x03
 		}
 
 		enum BLE_GAP_CONNECTABLE_MODE {
 			NON_CONNTECTABLE		  = 0,
 			DIRECTED_CONNECTABLE	  = 1,
-			CONNECTABLE_SCANNABLE 	  = 2,
+			UNDIRECTED_CONNECTABLE 	  = 2,
 			SCANNABLE_NON_CONNECTABLE = 3,
-			CONNECTABLE_NON_SCANNABLE = 4
 		}
 
 		enum BLE_GAP_DISCOVER_MODE {
@@ -169,12 +130,6 @@ class BGM113 {
 			GENERAL_DISCOVERABLE 	= 2,
 			BROADCAST 				= 3,
 			USER_DATA 				= 4, 
-		}
-
-		enum BLE_GAP_PHY_TYPE {
-			PHY_1M 		= 1,
-			PHY_2M 		= 2,
-			PHY_CODED 	= 4,
 		}
 	}
 
@@ -237,9 +192,6 @@ class BGM113 {
                 _reset_l.write(1);
                 _reset_l.configure(DIGITAL_IN);
                 _uart_buffer = "";
-                // Adding this seems to solve the issues
-                // of booting in DFU mode
-                //dfu_reset();
             }.bindenv(this))
         }
 	}
@@ -428,19 +380,19 @@ class BGM113 {
 					case BLE_CLASS_ID.SYSTEM:
 						switch (event.cmd) {
 							// system_hello response
-							case 0:
+							case BLE_SYSTEM_CMD.HELLO:
 								event.name <- "system_hello";
 								event.result <- payload[0] + (payload[1] << 8);
 								break;
 							
 							//  system_get_bt_address response
-							case 3:
+							case BLE_SYSTEM_CMD.GET_BT_ADDRESS:
 								event.payload.address <- addr_to_string(payload.slice(0, 6));
 								event.name <- "system_get_bt_address";
 								break;
 
 							// system_halt response
-							case 12:
+							case BLE_SYSTEM_CMD.HALT:
 								event.result <- payload[0] + (payload[1] << 8);
 								event.name <- "system_halt";
 								break;
@@ -450,28 +402,21 @@ class BGM113 {
 					case BLE_CLASS_ID.GAP:
 						switch(event.cmd) {
 							// gap_end_procedure response
-							case 3:
+							case BLE_GAP_CMD.END_PROCEDURE:
 								event.result <- payload[0] + (payload[1] << 8);
 								event.name <- "gap_end_procedure";
 								break;
 
-							// gap_set_discovery_timing response
-							case 22: 
+							// gap_discover response
+							case BLE_GAP_CMD.DISCOVER:
 								event.result <- payload[0] + (payload[1] << 8);
-								event.name <- "gap_set_discovery_timing";
-								break;
+								event.name <- "gap_discover"
 
-							// gap_set_discovery_type response
-							case 23:
+							// gap_set_scan_parameters response
+							case BLE_GAP_CMD.SET_SCAN_PARAMETERS:
 								event.result <- payload[0] + (payload[1] << 8);
-								event.name <- "gap_set_discovery_type";
+								event.name <- "gap_set_scan_parameter";
 								break;
-
-							// gap_start_discovery response
-							case 24:
-								event.result <- payload[0] + (payload[1] << 8);
-								event.name <- "gap_start_discovery";
-								break;	
 						}
 						break;	
 				}
@@ -482,12 +427,12 @@ class BGM113 {
 				switch(event.cid) {
 					case BLE_CLASS_ID.DFU:
 						switch(event.cmd) {
-							case 0:
+							case BLE_DFU_EVT.BOOT:
 								event.payload.bootloader <- payload[0] + (payload[1] << 8) + (payload[2] << 16) + (payload[3] << 24);
 								event.name <- "dfu_boot";
 								break;
 
-							case 1:
+							case BLE_DFU_EVT.BOOT_FAILURE:
 								event.reason <- payload[0] + (payload[1] << 8);
 								event.name <-"dfu_boot_failure";
 								break;
@@ -498,14 +443,14 @@ class BGM113 {
 					case BLE_CLASS_ID.SYSTEM: 
 						switch (event.cmd) {
 							// system_boot event
-							case 0:
+							case BLE_SYSTEM_EVT.BOOT:
 								event.payload.major <- payload[0] + (payload[1] << 8);
 								event.payload.minor <- payload[2] + (payload[3] << 8);
 								event.payload.patch <- payload[4] + (payload[5] << 8);
 								event.payload.build <- payload[6] + (payload[7] << 8);
 								event.payload.bootloader <- payload[8] + (payload[9] << 8) + (payload[10] << 16) + (payload[11] << 24);
-								event.payload.hw <- payload[12] + (payload[13] << 8);
-								event.payload.hash <- payload[14] + (payload[15] << 8) + (payload[16] << 16) + (payload[17] << 24);
+								//event.payload.hw <- payload[12] + (payload[13] << 8);
+								//event.payload.hash <- payload[14] + (payload[15] << 8) + (payload[16] << 16) + (payload[17] << 24);
 								event.name <- "system_boot";
 								break;
 						}
@@ -516,12 +461,11 @@ class BGM113 {
 							// gap_scan_response
 							case 0:
 								event.payload.rssi <- payload[0] //- 256;
-								switch(payload[1] & 0x7) {
-									case 0: event.payload.packet_type <- "connectable_scannable"; break;
-									case 1: event.payload.packet_type <- "connectable"; break;
-									case 2: event.payload.packet_type <- "connectable_scannable"; break;
-									case 3: event.payload.packet_type <- "scannable"; break;
-									case 4: event.payload.packet_type <- "non_connectable_non_scannable"; break;
+								switch(payload[1]) {
+									case 0: event.payload.packet_type <- "connectable"; break;
+									case 2: event.payload.packet_type <- "scannable"; break;
+									case 3: event.payload.packet_type <- "non_connectable"; break;
+									case 4: event.payload.packet_type <- "scan_response"; break;
 									default: event.payload.packet_type <- "unknown"; break;
 								}
 								event.payload.sender <- addr_to_string(payload.slice(2, 8));
@@ -554,24 +498,50 @@ class BGM113 {
 		return event;
 	}
 
+	function dfu_reset(boot_type = 0) {
+		local payload = format("%c", boot_type);
+		return send_command("dfu_reset", BLE_CLASS_ID.DFU, BLE_DFU_CMD.RESET, payload);
+	}
 
     function system_hello(callback = null) {
-        return send_command("system_hello", BLE_CLASS_ID.SYSTEM, 0, null, callback);
+        return send_command("system_hello", BLE_CLASS_ID.SYSTEM, BLE_SYSTEM_CMD.HELLO, null, callback);
 	}
 
     function system_get_bt_address(callback = null) {
-        return send_command("system_get_bt_address", BLE_CLASS_ID.SYSTEM, 3, null, callback);
+        return send_command("system_get_bt_address", BLE_CLASS_ID.SYSTEM, BLE_SYSTEM_CMD.GET_BT_ADDRESS, null, callback);
 	}
 
 	function system_reset(boot_in_dfu = 0) {
         local payload = format("%c", boot_in_dfu);
-        return send_command("system_reset", BLE_CLASS_ID.SYSTEM, 0, payload);
+        return send_command("system_reset", BLE_CLASS_ID.SYSTEM, BLE_SYSTEM_CMD.RESET, payload);
 	}
 
-	function dfu_reset(boot_type = 0) {
-		local payload = format("%c", boot_type);
-		return send_command("system_reset", BLE_CLASS_ID.DFU, 0, payload);
+	function gap_end_procedure(callback = null) {
+		return send_command("gap_end_procedure", BLE_CLASS_ID.GAP, BLE_GAP_CMD.END_PROCEDURE, null, callback);
+	}
+
+	function gap_set_scan_parameters(scan_interval, scan_window, active, callback = null) {
+		assert(scan_interval >= 0x0004);
+		assert(scan_interval <= 0xFFFF);
+		assert(scan_interval >= 0x0004);
+		assert(scan_interval <= 0xFFFF);
+
+		local converted_scan_interval = scan_interval / 0.625;
+		local converted_scan_window = scan_window / 0.625;
+
+		local payload = format ("%c%c%c%c%c",
+								(converted_scan_interval.tointeger() & 0xFF), 
+								((converted_scan_interval.tointeger()) >> 8) & 0xFF,
+								(converted_scan_window.tointeger() & 0xFF), 
+								(converted_scan_window.tointeger() >> 8) & 0xFF, 
+								active);
+
+		return send_command("gap_set_scan_parameters", BLE_CLASS_ID.GAP, BLE_GAP_CMD.SET_SCAN_PARAMETERS, payload, callback);	
+
+	}
+
+	function gap_discover(mode, callback = null) {
+		local payload = format("%c", mode);
+		return send_command("gap_discover", BLE_CLASS_ID.GAP, BLE_GAP_CMD.DISCOVER, payload, callback);
 	}
 }
-
-

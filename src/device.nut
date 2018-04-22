@@ -1,11 +1,5 @@
 @include "bgm113.class.nut"
 
-mayor <- null;
-minor <- null;
-patch <- null;
-build <- null;
-bootloader <- null;
-hw <- null;
 address <- null;
 
 server.log("Device booted.");
@@ -13,49 +7,88 @@ m_bgm113 <- BGM113(hardware.uart0, hardware.pinN);
 
 m_bgm113.log("APP", "Booted ...");
 
+m_bgm113.reboot();
+
 m_bgm113.on("dfu_boot", function (event) {
 
 	server.log("Booted in DFU mode");
-	bootloader = format("%u", event.payload.bootloader);
+	local bootloader = format("%u", event.payload.bootloader);
 	server.log("Bootloader version: " + bootloader);
 })
 
 m_bgm113.on("system_boot", function(event) {
 
-	major = format("%u", event.payload.major);
+	local major = format("%u", event.payload.major);
 	server.log("Major release version: " + major);
-	minor = format("%u", event.payload.minor);
+	local minor = format("%u", event.payload.minor);
 	server.log("Minor release version: " + minor);
-	patch = format("%u", event.payload.patch);
+	local patch = format("%u", event.payload.patch);
 	server.log("Patch release number: " + patch);
-	build = format("%u", event.payload.build);
+	local build = format("%u", event.payload.build);
 	server.log("Build number: " + build);
-	bootloader = format("%u", event.payload.bootloader);
+	local bootloader = format("%u", event.payload.bootloader);
 	server.log("Bootloader version: " + bootloader);
-	hw = format("%u", event.payload.hw);
-	server.log("Hardware type: " + hw);
 
 	m_bgm113.system_get_bt_address(function (response) {
 		if (response.result == 0 || response.result == "timeout") { 
 			address = format("%s", response.payload.address);
 			server.log("Address: " + address);
+			server.log("Starting discovery");
+			discover_mode();
 		} else {
 	    	m_bgm113.log("ERR", "Error detecting the BMG113");
 		}
 	})
 });
 
-function say_hello() {
+function discover_mode(active = false) {
 
-	m_bgm113.system_hello(function(response) {
-		if (response.result == 0 || response.result == "timeout") {
-			server.log("Hello back from BMG113");
-		} else {
-			m_bgm113.log("ERR", "Error communicating with BMG113");
+	// Configure the scanning parameters, and start scanning.
+	m_bgm113.gap_set_scan_parameters(75, 50, active ? 1 : 0);
+	m_bgm113.gap_discover(BLE_GAP_DISCOVER_MODE.DISCOVER_GENERIC);
+
+	// Here, we'll handle the scan responses
+	m_bgm113.on("gap_scan_response", function (event) {
+
+		foreach(advdata in event.payload.data) {
+			// First we check if is a manufacturer specific data
+			if (advdata.type == 0xFF) {
+				// Then we check if is a beacon.
+				// First two bytes must be 0x004C (Apple Company ID)
+				// Second two bytes must be 0x1502 (iBeacon advertisement indicator)
+				if (advdata.data.slice(0, 4) == "\x4c\x00\x02\x15") {
+					
+					// This is a iBeacon
+					local uuid = advdata.data.slice(4, 20);
+					uuid = parse_uuid(uuid);
+
+                    local major = advdata.data.slice(20, 22);
+                    major = (major[0] << 8) + (major[1]);
+    
+                    local minor = advdata.data.slice(22, 24);
+                    minor = (minor[0] << 8) + (minor[1]);
+    
+					local power = advdata.data[24];
+
+					local beaconid = format("%s:%d:%d", uuid, major, minor);
+
+					server.log("Beacon Found: " + beaconid);
+				}
+			}
 		}
-	});
-
-	imp.wakeup(5, say_hello);
+	})
 }
 
-say_hello();
+function parse_uuid(uuid) {
+    local result = "";
+    foreach (ch in uuid) {
+        result += format("%02X", ch)
+    }
+    return result;
+}
+
+function idle_updates() {
+	imp.wakeup(60, idle_updates);
+}
+
+imp.wakeup(10, idle_updates);
