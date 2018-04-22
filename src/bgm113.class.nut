@@ -139,9 +139,9 @@ class BGM113 {
 		} else if (type == "ERR") {
 			server.error(format("%s: %s", type, message));
 		} else if (type == "SEND" || type == "RECV") {
-			server.log(format("%s: %s", type, hexdump(message)));
+			//server.log(format("%s: %s", type, hexdump(message)));
 		} else {
-			server.log(format("%s: %s", type, message));
+			//server.log(format("%s: %s", type, message));
 		}
 	}
 
