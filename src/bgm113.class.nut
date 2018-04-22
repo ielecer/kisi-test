@@ -7,7 +7,7 @@ class BGM113 {
     _event_callbacks = null; // Event callback queue
 	_uart_buffer = null; // RX char buffer
 
-	constructor(uart, reset_l, baud = 115000) {
+	constructor(uart, reset_l, baud = 115200) {
 		init();
 
 		_uart = uart;
