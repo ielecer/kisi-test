@@ -1,6 +1,7 @@
 @include "bgm113.class.nut"
 
 address <- null;
+scans <- {};
 
 server.log("Device booted.");
 m_bgm113 <- BGM113(hardware.uart0, hardware.pinN);
@@ -70,9 +71,29 @@ function discover_mode(active = false) {
     
 					local power = advdata.data[24];
 
-					local beaconid = format("%s:%d:%d", uuid, major, minor);
+					local beacon_id = format("%s:%d:%d", uuid, major, minor);
+					// If the detected beacon is not in our scan list
+					// we allocate the space for it
+					if (!(beacon_id in scans)) {
+						server.log("New Beacon");
 
-					server.log("Beacon Found: " + beaconid);
+                    	scans[beacon_id] <- {};
+                    	scans[beacon_id].rssi <- {};
+                    	scans[beacon_id].rssi[address] <- {};
+                    	scans[beacon_id].rssi[address].time <- time();
+                    	scans[beacon_id].rssi[address].samples <- 0;
+						scans[beacon_id].rssi[address].rssi <- 0.0;
+					}
+
+					// Update information for a beacon on our list
+					local beacon = scans[beacon_id];
+					beacon.uuid <- uuid;
+					beacon.major <- major;
+					beacon.minor <- minor;
+					beacon.time <- time();
+					beacon.rssi[address].samples++;
+					beacon.rssi[address].rssi += event.payload.rssi;
+					beacon.rssi[address].rssi /= 2;
 				}
 			}
 		}
@@ -88,7 +109,14 @@ function parse_uuid(uuid) {
 }
 
 function idle_updates() {
-	imp.wakeup(60, idle_updates);
+    imp.wakeup(60, idle_updates);
+
+    server.log("/----------------------------------------/");
+    if (scans.len() > 0) {
+    	server.log("scans length = " + scans.len());
+    	agent.send("scans", scans);
+		scans = {};
+	}
 }
 
 imp.wakeup(10, idle_updates);
