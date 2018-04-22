@@ -456,7 +456,8 @@ class BGM113 {
                         switch(event.cmd) {
                             // gap_scan_response
                             case 0:
-                                event.payload.rssi <- payload[0] //- 256;
+                                // parse rssi as int8_t
+                                event.payload.rssi <- payload[0] - 256;
                                 switch(payload[1]) {
                                     case 0: event.payload.packet_type <- "connectable"; break;
                                     case 2: event.payload.packet_type <- "scannable"; break;
@@ -532,7 +533,7 @@ class BGM113 {
                                 (converted_scan_window.tointeger() >> 8) & 0xFF, 
                                 active);
 
-        ßreturn send_command("gap_set_scan_parameters", BLE_CLASS_ID.GAP, BLE_GAP_CMD.SET_SCAN_PARAMETERS, payload, callback);	
+        return send_command("gap_set_scan_parameters", BLE_CLASS_ID.GAP, BLE_GAP_CMD.SET_SCAN_PARAMETERS, payload, callback);	
 
     }
 

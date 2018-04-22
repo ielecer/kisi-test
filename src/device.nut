@@ -34,6 +34,14 @@ m_bgm113.on("system_boot", function(event) {
             address = format("%s", response.payload.address);
             server.log("Address: " + address);
             server.log("Starting discovery");
+
+            local location = {};
+            location.address <- address;
+            location.mac <- imp.getmacaddress();
+            location.deviceid <- hardware.getdeviceid();
+            agent.send("location", location);
+            
+            // Start passive scanning
             discover_mode();
         } else {
             m_bgm113.log("ERR", "Error detecting the BMG113");
@@ -71,7 +79,6 @@ function discover_mode(active = false) {
                     // If the detected beacon is not in our scan list
                     // we allocate the space for it
                     if (!(beacon_id in scans)) {
-                        server.log("New Beacon");
                         scans[beacon_id] <- {};
                         scans[beacon_id].rssi <- {};
                         scans[beacon_id].rssi[address] <- {};
@@ -104,14 +111,11 @@ function parse_uuid(uuid) {
 }
 
 function idle_updates() {
-    imp.wakeup(60, idle_updates);
-
-    server.log("/----------------------------------------/");
+    imp.wakeup(10, idle_updates);
     if (scans.len() > 0) {
-        server.log("scans length = " + scans.len());
         agent.send("scans", scans);
         scans = {};
     }
 }
 
-imp.wakeup(10, idle_updates);
+imp.wakeup(5, idle_updates);
