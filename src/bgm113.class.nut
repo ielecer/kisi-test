@@ -7,7 +7,7 @@ class BGM113 {
     _event_callbacks = null; // Event callback queue
 	_uart_buffer = null; // RX char buffer
 
-	constructor(uart, reset_l, baud = 115200) {
+	constructor(uart, reset_l, baud = 115000) {
 		init();
 
 		_uart = uart;
@@ -239,7 +239,6 @@ class BGM113 {
                 _uart_buffer = "";
                 // Adding this seems to solve the issues
                 // of booting in DFU mode
-                //dfu_reset();
             }.bindenv(this))
         }
 	}
@@ -504,8 +503,8 @@ class BGM113 {
 								event.payload.patch <- payload[4] + (payload[5] << 8);
 								event.payload.build <- payload[6] + (payload[7] << 8);
 								event.payload.bootloader <- payload[8] + (payload[9] << 8) + (payload[10] << 16) + (payload[11] << 24);
-								event.payload.hw <- payload[12] + (payload[13] << 8);
-								event.payload.hash <- payload[14] + (payload[15] << 8) + (payload[16] << 16) + (payload[17] << 24);
+								//event.payload.hw <- payload[12] + (payload[13] << 8);
+								//event.payload.hash <- payload[14] + (payload[15] << 8) + (payload[16] << 16) + (payload[17] << 24);
 								event.name <- "system_boot";
 								break;
 						}
@@ -556,7 +555,7 @@ class BGM113 {
 
 	function dfu_reset(boot_type = 0) {
 		local payload = format("%c", boot_type);
-		return send_command("system_reset", BLE_CLASS_ID.DFU, 0, payload);
+		return send_command("dfu_reset", BLE_CLASS_ID.DFU, 0, payload);
 	}
 
     function system_hello(callback = null) {
