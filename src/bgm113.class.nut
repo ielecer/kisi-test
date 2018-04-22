@@ -454,23 +454,16 @@ class BGM113 {
 								event.name <- "gap_end_procedure";
 								break;
 
-							// gap_set_discovery_timing response
-							case 22: 
+							// gap_discover response
+							case 2:
 								event.result <- payload[0] + (payload[1] << 8);
-								event.name <- "gap_set_discovery_timing";
-								break;
+								event.name <- "gap_discover"
 
-							// gap_set_discovery_type response
-							case 23:
+							// gap_set_scan_parameters response
+							case 6:
 								event.result <- payload[0] + (payload[1] << 8);
-								event.name <- "gap_set_discovery_type";
+								event.name <- "gap_set_scan_parameter";
 								break;
-
-							// gap_start_discovery response
-							case 24:
-								event.result <- payload[0] + (payload[1] << 8);
-								event.name <- "gap_start_discovery";
-								break;	
 						}
 						break;	
 				}
@@ -515,12 +508,11 @@ class BGM113 {
 							// gap_scan_response
 							case 0:
 								event.payload.rssi <- payload[0] //- 256;
-								switch(payload[1] & 0x7) {
-									case 0: event.payload.packet_type <- "connectable_scannable"; break;
-									case 1: event.payload.packet_type <- "connectable"; break;
-									case 2: event.payload.packet_type <- "connectable_scannable"; break;
-									case 3: event.payload.packet_type <- "scannable"; break;
-									case 4: event.payload.packet_type <- "non_connectable_non_scannable"; break;
+								switch(payload[1]) {
+									case 0: event.payload.packet_type <- "connectable"; break;
+									case 2: event.payload.packet_type <- "scannable"; break;
+									case 3: event.payload.packet_type <- "non_connectable"; break;
+									case 4: event.payload.packet_type <- "scan_response"; break;
 									default: event.payload.packet_type <- "unknown"; break;
 								}
 								event.payload.sender <- addr_to_string(payload.slice(2, 8));
@@ -575,7 +567,7 @@ class BGM113 {
 		return send_command("gap_end_procedure", BLE_CLASS_ID.GAP, 3, null, callback);
 	}
 
-	function gap_set_discovery_timing(phy, scan_interval, scan_window, callback = null) {
+	function gap_set_scan_parameters(scan_interval, scan_window, active, callback = null) {
 		assert(scan_interval >= 0x0004);
 		assert(scan_interval <= 0xFFFF);
 		assert(scan_interval >= 0x0004);
@@ -583,25 +575,20 @@ class BGM113 {
 
 		local converted_scan_interval = scan_interval / 0.625;
 		local converted_scan_window = scan_window / 0.625;
-
 		local payload = format ("%c%c%c%c%c",
-								phy,
 								(converted_scan_interval.tointeger() && 0xFF), 
 								((converted_scan_interval.tointeger()) >> 8) && 0xFF,
 								(converted_scan_window.tointeger() && 0xFF), 
-								(converted_scan_window.tointeger() >> 8) && 0xFF);
+								(converted_scan_window.tointeger() >> 8) && 0xFF, 
+								active);
 
-		return send_command("gap_set_discovery_timing", BLE_CLASS_ID.GAP, 0x16, payload, callback);
+		return send_command("gap_set_scan_parameters", BLE_CLASS_ID.GAP, 6, payload, callback);	
+
 	}
 
-	function gap_set_discovery_type(phy, scan_type, callback = null) {
-		local payload = format ("%c%c", phy, scan_type);
-		return send_command("gap_set_discovery_type", BLE_CLASS_ID.GAP, 0x17, payload, callback);
-	}
-
-	function gap_start_discovery(phy, mode, callback = null) {
-		local payload = format("%c%c", phy, mode);
-		return send_command("gap_start_discovery", BLE_CLASS_ID.GAP, 0x18, payload, callback);
+	function gap_discover(mode) {
+		local payload = format("%c", mode);
+		return send_command("gap_discover", BLE_CLASS_ID.GAP, 2, payload, callback);
 	}
 }
 
