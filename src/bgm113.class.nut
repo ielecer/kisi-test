@@ -554,6 +554,10 @@ class BGM113 {
 		return event;
 	}
 
+	function dfu_reset(boot_type = 0) {
+		local payload = format("%c", boot_type);
+		return send_command("system_reset", BLE_CLASS_ID.DFU, 0, payload);
+	}
 
     function system_hello(callback = null) {
         return send_command("system_hello", BLE_CLASS_ID.SYSTEM, 0, null, callback);
@@ -568,9 +572,37 @@ class BGM113 {
         return send_command("system_reset", BLE_CLASS_ID.SYSTEM, 0, payload);
 	}
 
-	function dfu_reset(boot_type = 0) {
-		local payload = format("%c", boot_type);
-		return send_command("system_reset", BLE_CLASS_ID.DFU, 0, payload);
+	function gap_end_procedure(callback = null) {
+		return send_command("gap_end_procedure", BLE_CLASS_ID.GAP, 3, null, callback);
+	}
+
+	function gap_set_discovery_timing(phy, scan_interval, scan_window, callback = null) {
+		assert(scan_interval >= 0x0004);
+		assert(scan_interval <= 0xFFFF);
+		assert(scan_interval >= 0x0004);
+		assert(scan_interval <= 0xFFFF);
+
+		local converted_scan_interval = scan_interval / 0.625;
+		local converted_scan_window = scan_window / 0.625;
+
+		local payload = format ("%c%c%c%c%c",
+								phy,
+								(converted_scan_interval.tointeger() && 0xFF), 
+								((converted_scan_interval.tointeger()) >> 8) && 0xFF,
+								(converted_scan_window.tointeger() && 0xFF), 
+								(converted_scan_window.tointeger() >> 8) && 0xFF);
+
+		return send_command("gap_set_discovery_timing", BLE_CLASS_ID.GAP, 0x16, payload, callback);
+	}
+
+	function gap_set_discovery_type(phy, scan_type, callback = null) {
+		local payload = format ("%c%c", phy, scan_type);
+		return send_command("gap_set_discovery_type", BLE_CLASS_ID.GAP, 0x17, payload, callback);
+	}
+
+	function gap_start_discovery(phy, mode, callback = null) {
+		local payload = format("%c%c", phy, mode);
+		return send_command("gap_start_discovery", BLE_CLASS_ID.GAP, 0x18, payload, callback);
 	}
 }
 
