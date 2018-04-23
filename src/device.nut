@@ -52,7 +52,7 @@ m_bgm113.on("system_boot", function(event) {
 function discover_mode(active = false) {
 
     // Configure the scanning parameters, and start scanning.
-    m_bgm113.gap_set_scan_parameters(5, 5, active ? 1 : 0);
+    m_bgm113.gap_set_scan_parameters(50, 50, active ? 1 : 0);
     m_bgm113.gap_discover(BLE_GAP_DISCOVER_MODE.DISCOVER_GENERIC);
 
     // Here, we'll handle the scan responses
