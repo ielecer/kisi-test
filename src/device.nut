@@ -52,7 +52,7 @@ m_bgm113.on("system_boot", function(event) {
 function discover_mode(active = false) {
 
     // Configure the scanning parameters, and start scanning.
-    m_bgm113.gap_set_scan_parameters(75, 50, active ? 1 : 0);
+    m_bgm113.gap_set_scan_parameters(50, 50, active ? 1 : 0);
     m_bgm113.gap_discover(BLE_GAP_DISCOVER_MODE.DISCOVER_GENERIC);
 
     // Here, we'll handle the scan responses
@@ -64,38 +64,40 @@ function discover_mode(active = false) {
                 // Then we check if is a beacon.
                 // First two bytes must be 0x004C (Apple Company ID)
                 // Second two bytes must be 0x1502 (iBeacon advertisement indicator)
-                if (advdata.data.slice(0, 4) == "\x4c\x00\x02\x15") {
-
-                    // This is a iBeacon
-                    local uuid = advdata.data.slice(4, 20);
-                    uuid = parse_uuid(uuid);
-                    local major = advdata.data.slice(20, 22);
-                    major = (major[0] << 8) + (major[1]);
-                    local minor = advdata.data.slice(22, 24);
-                    minor = (minor[0] << 8) + (minor[1]);
-                    local power = advdata.data[24];
-                    local beacon_id = format("%s:%d:%d", uuid, major, minor);
-
-                    // If the detected beacon is not in our scan list
-                    // we allocate the space for it
-                    if (!(beacon_id in scans)) {
-                        scans[beacon_id] <- {};
-                        scans[beacon_id].rssi <- {};
-                        scans[beacon_id].rssi[address] <- {};
-                        scans[beacon_id].rssi[address].time <- time();
-                        scans[beacon_id].rssi[address].samples <- 0;
-                        scans[beacon_id].rssi[address].rssi <- 0.0;
+                if (advdata.data.len() >= 24) {
+                    if (advdata.data.slice(0, 4) == "\x4c\x00\x02\x15") {
+    
+                        // This is a iBeacon
+                        local uuid = advdata.data.slice(4, 20);
+                        uuid = parse_uuid(uuid);
+                        local major = advdata.data.slice(20, 22);
+                        major = (major[0] << 8) + (major[1]);
+                        local minor = advdata.data.slice(22, 24);
+                        minor = (minor[0] << 8) + (minor[1]);
+                        local power = advdata.data[24];
+                        local beacon_id = format("%s:%d:%d", uuid, major, minor);
+    
+                        // If the detected beacon is not in our scan list
+                        // we allocate the space for it
+                        if (!(beacon_id in scans)) {
+                            scans[beacon_id] <- {};
+                            scans[beacon_id].rssi <- {};
+                            scans[beacon_id].rssi[address] <- {};
+                            scans[beacon_id].rssi[address].time <- time();
+                            scans[beacon_id].rssi[address].samples <- 0;
+                            scans[beacon_id].rssi[address].rssi <- 0.0;
+                        }
+    
+                        // Update information for a beacon on our list
+                        local beacon = scans[beacon_id];
+                        beacon.uuid <- uuid;
+                        beacon.major <- major;
+                        beacon.minor <- minor;
+                        beacon.time <- time();
+                        beacon.rssi[address].samples++;
+                        beacon.rssi[address].rssi += event.payload.rssi;
+                        beacon.rssi[address].rssi /= 2;
                     }
-
-                    // Update information for a beacon on our list
-                    local beacon = scans[beacon_id];
-                    beacon.uuid <- uuid;
-                    beacon.major <- major;
-                    beacon.minor <- minor;
-                    beacon.time <- time();
-                    beacon.rssi[address].samples++;
-                    beacon.rssi[address].rssi += event.payload.rssi;
-                    beacon.rssi[address].rssi /= 2;
                 }
             }
         }
@@ -111,11 +113,11 @@ function parse_uuid(uuid) {
 }
 
 function idle_updates() {
-    imp.wakeup(10, idle_updates);
+    imp.wakeup(0.5, idle_updates);
     if (scans.len() > 0) {
         agent.send("scans", scans);
         scans = {};
     }
 }
 
-imp.wakeup(5, idle_updates);
+imp.wakeup(1, idle_updates);

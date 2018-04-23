@@ -27,6 +27,12 @@ device.on("scans" function (scans) {
     }
 });
 
+function sort_scans_function(first, second) {
+    if (first.rssi > second.rssi) return -1;
+    if (first.rssi < second.rssi) return 1;
+    return 0;
+}
+
 function request_handler(request, response) {
     if (request.path == "/") {
         try {
@@ -56,6 +62,7 @@ function request_handler(request, response) {
                       response.send(500, ("Agent Error: " + ex))
                   }
               }  else {
+                  scans_array.sort(sort_scans_function);
                   local data = {};
                   // If the limit is less than the total available beacons, we slice the array
                   if (limit < scans_array.len()) {

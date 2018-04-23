@@ -520,8 +520,9 @@ class BGM113 {
     function gap_set_scan_parameters(scan_interval, scan_window, active, callback = null) {
         assert(scan_interval >= 0x0004);
         assert(scan_interval <= 0xFFFF);
-        assert(scan_interval >= 0x0004);
-        assert(scan_interval <= 0xFFFF);
+        assert(scan_window >= 0x0004);
+        assert(scan_window <= 0xFFFF);
+        assert(scan_window <= scan_interval);
 
         local converted_scan_interval = scan_interval / 0.625;
         local converted_scan_window = scan_window / 0.625;
